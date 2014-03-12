@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 gem 'rake',"10.1.1"
 
 gem 'sinatra',"1.4.4"
-gem 'chawk', :git => 'git://github.com/queuetue/chawk-gem.git', :branch => 'master'
+gem 'chawk', "0.1.6"
 gem 'json', "1.8.1"
 
 group :test do

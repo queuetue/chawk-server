@@ -6,7 +6,7 @@ Bundler.require(:default, ENV["RACK_ENV"].to_sym)
 
 Dir["./lib/**/*.rb"].each { |f| require f }
 
-db_uri = 'sqlite::memory:'
+db_uri = "sqlite://#{settings.root}/project.db"
 DataMapper::Logger.new('db.log', :debug)
 DataMapper::Model.raise_on_save_failure = true
 DataMapper.logger.debug "Here we go!"

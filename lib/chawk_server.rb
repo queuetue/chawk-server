@@ -14,11 +14,26 @@ module Chawk
 		end
 
 		post %r"^/points/(\w+/)+(/*)$" do
-		url_regex = %r"(\w+)"
+			url_regex = %r"(\w+)"
 			m = request.path_info.scan(url_regex)
 			(root,*path) = m.flatten
 			addr = board.points.addr(path)
-			addr << params[:value].to_i
+			case params[:value]
+			when /^[-+]?[0-9]+$/ # It's an Integer
+				val = params[:value].to_i
+				addr << val
+				#puts "= #{val}"
+			when /^[-+]?[0-9]+\+$/ # Add Integer
+				val = (params[:value][0..-1]).to_i
+				#puts "+ #{params[:value]} #{val}"
+				addr + val
+			when /^[-+]?[0-9]+\-$/ # Sub Integer
+				val = (params[:value][0..-1]).to_i
+				#puts "- #{val}"
+				addr - val
+			else
+			  status 404
+			end
 			redirect to("/points/#{addr.address}/last" )
 		end
 
@@ -38,10 +53,11 @@ module Chawk
 					end
 				else
 					data = addr.last(params[:count].to_i)
+					#puts "#{data}"
 					if data.nil? || data.empty?
 						payload_data = []
 					else
-						payload_data = data.inject([]){|result,d|result << {x:d.timestamp,y:d.value}}
+						payload_data = data.collect{|d|{x:d.timestamp,y:d.value}}
 					end
 				end
 
