@@ -1,16 +1,15 @@
 source 'https://rubygems.org'
 
-gem 'rake'
+gem 'rake',"10.1.1"
 
-gem 'sinatra'
-gem 'chawk', "0.0.2"
+gem 'sinatra',"1.4.4"
+gem 'chawk', "0.1.3"
+gem 'json', "1.8.1"
 
 group :test do
-    gem 'rspec'
+    gem 'rspec',"2.14.1"
     gem 'rack-test', :require => "rack/test"
     gem 'simplecov', :require => false
-    gem 'capybara', "2.2.0"
-    gem 'launchy'
-    gem 'poltergeist'
+    gem 'launchy',"2.4.2"
 end
 
