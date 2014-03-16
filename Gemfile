@@ -2,9 +2,17 @@ source 'https://rubygems.org'
 
 gem 'rake',"10.1.1"
 
+gem 'dm-postgres-adapter'
 gem 'sinatra',"1.4.4"
-gem 'chawk', "0.1.6"
+gem 'chawk', "0.1.13"
 gem 'json', "1.8.1"
+gem 'oauth2'
+
+group :development do
+	gem 'hirb'
+	gem 'awesome_print'
+	gem 'pry'
+end
 
 group :test do
     gem 'rspec',"2.14.1"
