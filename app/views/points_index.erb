@@ -158,12 +158,23 @@
                 <i class="fa fa-bell fa-fw"></i> New Value in Series
             </div>
 
-           <form role="form" method="POST" action="/points/<%= @addr.address %>">
+           <form id="new_data_form" role="form" method="POST" action="/points/<%= @addr.address %>">
               <div class="form-group">
-                <input class="form-control" name="new_data" placeholder="Enter a number here.">
+                <input class="form-control" name="new_data" placeholder="Enter numbers here, separated by commas.">
               </div>
-              <button type="submit" class="btn btn-default">New Value</button>
+              <button type="submit" class="btn btn-default" >New Value</button>
             </form>
+
+            <script>
+
+            $( "#new_data_form" ).submit(function( event ) {
+                event.preventDefault();
+                var $form = $( this );
+                var term = $form.find( "input[name='new_data']" ).val();
+                var url = $form.attr( "action" );
+                var posting = $.post( url, { new_data: term } );
+            });
+            </script>
 
         </div>
     </div>
@@ -201,40 +212,44 @@
 
 <script>
 
+function readCookie(name) {
+    var nameEQ = escape(name) + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return unescape(c.substring(nameEQ.length, c.length));
+    }
+    return null;
+}
+
 var data = <%= @data.to_json %>
 
-
 var graph;
-var es = new EventSource('/connect');
+var es = new EventSource('/data_change');
+
+es.onmessage = function(e) {
+    var msg = $.parseJSON(event.data);
+    console.log(msg);
+    refreshData();
+}
+
 var refreshData = function() {
-    $.getJSON( '/points/foo/data', function(data) {
+    $.getJSON( '/points/<%= @addr.address %>/data?api_key=' + readCookie('chawk.api_key'), function(data) {
         graph.setData(data.data);
     });
 }
 
-$(document).ready(function() {
-
-    graph = Morris.Line({
-        element: 'morris-area-chart',
-        data: data,
-        xkey: 'x',
-        ykeys: ['a'],
-        labels: ['a'],
-        parseTime: false,
-        ymin: 'auto',
-        ymax: 'auto',
-        hideHover: true
-    });
-
-    refreshData();
-
+graph = Morris.Line({
+    element: 'morris-area-chart',
+    data: data,
+    xkey: 'x',
+    ykeys: ['a'],
+    labels: ['a'],
+    parseTime: false,
+    ymin: 'auto',
+    ymax: 'auto',
+    hideHover: true
 });
-
-es.onmessage = function(e) {
-    var msg = $.parseJSON(event.data);
-    refreshData();
-    console.log(msg);
-}
-
 
 </script>

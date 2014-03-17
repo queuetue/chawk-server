@@ -18,14 +18,17 @@ module Chawk
 	class ChawkServer < Sinatra::Base
 		enable :sessions
 		enable :logging
+		file = File.new("out.log", 'a+')
+		file.sync = true
+		use Rack::CommonLogger, file
+
+		connections   = []
+		notifications = []
 
 	    use Rack::MethodOverride
 
 		set :session_secret, SESSION_SECRET 
 	
-		connections = []
-		notifications = []
-
 		def client
 			client ||= OAuth2::Client.new(G_API_CLIENT, G_API_SECRET, {
 				:site => 'https://accounts.google.com',
@@ -61,7 +64,7 @@ module Chawk
 			if session[:access_token] && !session[:access_token].nil?
 				# TODO: Deal with failures, outages, overall fragility here
 
-				puts "ACCESS TOKEN: #{session[:access_token]} // #{session[:refresh_token]}"
+				#  logger.info "ACCESS TOKEN: #{session[:access_token]} // #{session[:refresh_token]}"
 
 				access_token = OAuth2::AccessToken.from_hash(client, { 
 					:access_token => session[:access_token], 
@@ -106,14 +109,14 @@ module Chawk
 			end
 		end
 
-		# get '/connect', provides: 'text/event-stream' do
-		# 	stream :keep_open do |out|
-		# 		connections << out
-		# 		out.callback {
-		# 			connections.delete(out)
-		# 		}
-		# 	end
-		# end
+		get '/data_change', provides: 'text/event-stream' do
+			stream :keep_open do |out|
+				connections << out
+				out.callback {
+					connections.delete(out)
+				}
+			end
+		end
 
 		get '/signout' do
 			session[:access_token] = nil
@@ -174,6 +177,19 @@ module Chawk
 			@addr = Chawk.addr(@user.agent,params[:id].to_s)
 			data = params[:new_data].split(",").collect{|d|d.to_i}
 			@addr.points << data
+
+			notification = ({
+			'event' => 'DATACHANGE',
+			'key' => params[:id],
+			'timestamp' => Time.now()
+			}).to_json
+
+			#raise "NOTIFY #{notification}"
+
+			notifications << notification
+			notifications.shift if notifications.length > 10
+			connections.each { |out| out << "data: #{notification}\n\n"}
+
 			redirect "/points/" + params[:id]
 		end
 
@@ -186,16 +202,8 @@ module Chawk
 				addr.points << item["v"].to_i
 			end
 
-		    #notification = ({
-		    #		'event' => 'DATACHANGE',
-		    #		'key' => params[:id],
-		    #		'timestamp' => timestamp
-		    #		}).to_json
+			datachange_notify(params[:id])
 
-		    #notifications << notification
-			#notifications.shift if notifications.length > 10
-			#connections.each { |out| out << "data: #{notification}\n\n"}
-			""
 		end
 
 		def g_redirect_uri
