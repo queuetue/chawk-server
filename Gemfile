@@ -7,8 +7,12 @@ gem 'sinatra',"1.4.4"
 gem 'chawk', "0.1.13"
 gem 'json', "1.8.1"
 gem 'oauth2'
-gem 'rufus-scheduler'
 gem 'thin'
+
+gem 'sprockets'
+
+gem 'coffee-script'
+gem 'sass'
 
 group :development do
 	gem 'hirb'
