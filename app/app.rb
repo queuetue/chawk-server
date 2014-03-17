@@ -9,7 +9,6 @@ SESSION_SECRET= ENV['SESSION_SECRET']
 G_API_CLIENT= ENV['G_API_CLIENT']
 G_API_SECRET= ENV['G_API_SECRET']
 G_API_SCOPES = [
-			'https://www.googleapis.com/auth/plus.me',
 			'https://www.googleapis.com/auth/userinfo.email',
 			'https://www.googleapis.com/auth/userinfo.profile'].join(' ')
 
@@ -60,21 +59,14 @@ module Chawk
 
 			pass if request.path_info == '/auth/g_callback'
 			pass if request.path_info == '/signout'
+			pass if request.path_info == '/signin'
 
-			if session[:access_token] && !session[:access_token].nil?
+			if session[:g_access_token] && !session[:g_access_token].nil?
 				# TODO: Deal with failures, outages, overall fragility here
 
-				#  logger.info "ACCESS TOKEN: #{session[:access_token]} // #{session[:refresh_token]}"
+				access_token = OAuth2::AccessToken.from_hash(client, {:access_token => session[:g_access_token]})
 
-				access_token = OAuth2::AccessToken.from_hash(client, { 
-					:access_token => session[:access_token], 
-					:refresh_token =>  session[:refresh_token], 
-					:header_format => 'OAuth %s' } ).refresh!
-
-				session[:access_token]  = access_token.token
-				session[:refresh_token] = access_token.refresh_token
-
-				access_token.refresh!
+				session[:g_access_token]  = access_token.token
 				info = access_token.get("https://www.googleapis.com/oauth2/v3/userinfo").parsed
 
 				@user = Chawk::Models::GUser.first(:google_id=>info["sub"]) 
@@ -97,16 +89,18 @@ module Chawk
 				end
 				response.set_cookie("chawk.api_key", value:@user.api_key, path:"/"	)
 				@layout = :layout
+			else
+				redirect '/signin'
 			end
 		end
 
+		get '/signin' do
+			@g_sign_in_url = client.auth_code.authorize_url(:redirect_uri => g_redirect_uri,:scope => G_API_SCOPES)
+			erb :sign_in, layout:@layout
+		end
+
 		get '/' do
-			if !session[:access_token].nil?
-				erb :index, layout:@layout
-			else
-				@g_sign_in_url = client.auth_code.authorize_url(:redirect_uri => g_redirect_uri,:scope => G_API_SCOPES,:access_type => "offline")
-				erb :sign_in, layout:@layout
-			end
+			erb :index, layout:@layout
 		end
 
 		get '/data_change', provides: 'text/event-stream' do
@@ -119,8 +113,7 @@ module Chawk
 		end
 
 		get '/signout' do
-			session[:access_token] = nil
-			session[:refresh_token] = nil
+			session[:g_access_token] = nil
 			session[:user_id] = nil
 			@messages << "You have logged out."
 			redirect '/'
@@ -163,8 +156,7 @@ module Chawk
 
 		get '/auth/g_callback' do
 			new_token = client.auth_code.get_token(params[:code], :redirect_uri => g_redirect_uri)
-			session[:access_token]  = new_token.token
-			session[:refresh_token] = new_token.refresh_token
+			session[:g_access_token]  = new_token.token
 			redirect '/'
 		end
 
@@ -235,7 +227,7 @@ module Chawk
 		end
 
 		def access_token
-			OAuth2::AccessToken.new(client, session[:access_token], :refresh_token => session[:refresh_token])
+			OAuth2::AccessToken.new(client, session[:g_access_token])
 		end
 
 
