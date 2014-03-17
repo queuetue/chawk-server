@@ -58,7 +58,7 @@ module Chawk
 			pass if request.path_info == '/auth/g_callback'
 			pass if request.path_info == '/signout'
 
-			if session[:access_token]
+			if session[:access_token] && !session[:access_token].nil?
 				# TODO: Deal with failures, outages, overall fragility here
 
 				access_token = OAuth2::AccessToken.from_hash(client, { 
