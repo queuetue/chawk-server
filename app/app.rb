@@ -149,7 +149,7 @@ module Chawk
 			session[:refresh_token] = new_token.refresh_token
 
 			if session[:access_token].nil? or session[:refresh_token].nil?
-				raise "#{new_token}"
+				raise "??????????????????? #{new_token.token} - #{new_token.refresh_token}"
 			end
 
 			redirect '/'
