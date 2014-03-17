@@ -61,6 +61,8 @@ module Chawk
 			if session[:access_token] && !session[:access_token].nil?
 				# TODO: Deal with failures, outages, overall fragility here
 
+				puts "ACCESS TOKEN: #{session[:access_token]} // #{session:[refresh_token]}"
+
 				access_token = OAuth2::AccessToken.from_hash(client, { 
 					:access_token => session[:access_token], 
 					:refresh_token =>  session[:refresh_token], 
