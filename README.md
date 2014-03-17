@@ -5,6 +5,10 @@ ChawkServer
 
 ChawkServer is a time series data storage engine written in Ruby.  It uses chawk-gem internally to manage data and Google for authentication via oauth2.
 
+## Demo Server
+
+There is usually a test server up at [chawk-server.herokuapp.com](http://chawk-server.herokuapp.com).  It goes down regularly and the data gets wiped on a frequent basis. 
+
 ## Setup  
 
 This process is not automatic and requires some knowledge of Rack and DataMapper.
