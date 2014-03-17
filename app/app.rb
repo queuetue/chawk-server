@@ -26,6 +26,9 @@ module Chawk
 
 	    use Rack::MethodOverride
 
+	    # for testing, we'll pull this out later
+	    set :protection, :except => [:http_origin]
+
 		set :session_secret, SESSION_SECRET 
 	
 		def client
