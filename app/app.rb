@@ -55,56 +55,21 @@ module Chawk
 		end
 
 		before do
-			@layout = :not_logged_in_layout
-
 			pass if request.path_info == '/auth/g_callback'
 			pass if request.path_info == '/signout'
 			pass if request.path_info == '/signin'
+			pass if request.path_info == "/points/:id/data"
 
-			if session[:g_access_token] && !session[:g_access_token].nil?
-				# TODO: Deal with failures, outages, overall fragility here
-
-				access_token = OAuth2::AccessToken.from_hash(client, {:access_token => session[:g_access_token]})
-
-				session[:g_access_token]  = access_token.token
-				begin
-					info = access_token.get("https://www.googleapis.com/oauth2/v3/userinfo").parsed
-				rescue OAuth2::Error
-					redirect '/signin'
-				end
-
-				@user = Chawk::Models::GUser.first(:google_id=>info["sub"]) 
-				if @user
-					@user.google_email = info["email"]
-					@user.name = info["name"]
-					@user.family_name = info["family_name"]
-					@user.image = info["picture"]
-					@user.save
-				else
-					@user = Chawk::Models::GUser.create(google_id:info["sub"], 
-							agent:Chawk::Models::Agent.create(name:info["sub"]),
-							google_email:info["email"],							
-							email:info["email"],
-							handle:info["email"],
-							name:info["name"],
-							family_name:info["family_name"],
-							image:info["picture"],
-							api_key:SecureRandom.uuid )
-				end
-				response.set_cookie("chawk.api_key", value:@user.api_key, path:"/"	)
-				@layout = :layout
-			else
-				redirect '/signin'
-			end
 		end
 
 		get '/signin' do
 			@g_sign_in_url = client.auth_code.authorize_url(:redirect_uri => g_redirect_uri,:scope => G_API_SCOPES)
-			erb :sign_in, layout:@layout
+			erb :sign_in, :layout=>:not_logged_in_layout
 		end
 
 		get '/' do
-			erb :index, layout:@layout
+			protected!
+			erb :index
 		end
 
 		get '/data_change', provides: 'text/event-stream' do
@@ -124,11 +89,13 @@ module Chawk
 		end
 
 		get '/user' do
+			protected!
 			@title = "Profile"
 			erb :user_edit, layout:@layout
 		end
 
 		put '/user' do
+			protected!
 			@user.email = (params[:email])
 			@user.handle = (params[:handle])
 			@user.save
@@ -137,6 +104,7 @@ module Chawk
 		end
 
 		post "/api_key" do
+			protected!
 			@user.api_key = SecureRandom.uuid
 			@user.save
 			@user.alerts.create(message:"Your api key has been changed.",message_level:5,seen:false)
@@ -144,12 +112,14 @@ module Chawk
 		end
 
 		post "/node_access_request" do
+			protected!
 			node=Chawk::Models::Node.first(id=params[:node_id])
 			user=Chawk::Models::GUser.first(id=params[:user_id])
 			Chawk::Models::NodeAccessRequest.create(node:node,user:user)
 		end
 
 		post "/addr/:id/relation" do
+			protected!
 			if has_addr?(@user.agent, params[:id].to_s)
 				user=Chawk::Models::GUser.first(id=params[:user_id])
 				@addr.set_permissions(user.agent,read=params[:read],write=params[:write],admin=params[:admin])
@@ -165,6 +135,7 @@ module Chawk
 		end
 
 		get "/points/:id/?" do
+			protected!
 			if has_addr?(@user.agent, params[:id].to_s)
 				@last = @addr.points.last
 				step = 0
@@ -176,6 +147,7 @@ module Chawk
 		end
 
 		post "/points/:id/?" do
+			protected!
 			if has_addr?(@user.agent, params[:id].to_s)
 				data = params[:new_data].split(",").collect{|d|d.to_i}
 				@addr.points << data
@@ -244,6 +216,49 @@ module Chawk
 					return false
 				end
 			end
+
+			def protected!
+				redirect '/signin' unless authorized?
+			end
+
+			def authorized?
+				if session[:g_access_token] && !session[:g_access_token].nil?
+					# TODO: Deal with failures, outages, overall fragility here
+
+					access_token = OAuth2::AccessToken.from_hash(client, {:access_token => session[:g_access_token]})
+
+					session[:g_access_token]  = access_token.token
+					begin
+						info = access_token.get("https://www.googleapis.com/oauth2/v3/userinfo").parsed
+					rescue OAuth2::Error
+						return false
+					end
+
+					@user = Chawk::Models::GUser.first(:google_id=>info["sub"]) 
+					if @user
+						@user.google_email = info["email"]
+						@user.name = info["name"]
+						@user.family_name = info["family_name"]
+						@user.image = info["picture"]
+						@user.save
+					else
+						@user = Chawk::Models::GUser.create(google_id:info["sub"], 
+								agent:Chawk::Models::Agent.create(name:info["sub"]),
+								google_email:info["email"],							
+								email:info["email"],
+								handle:info["email"],
+								name:info["name"],
+								family_name:info["family_name"],
+								image:info["picture"],
+								api_key:SecureRandom.uuid )
+					end
+					response.set_cookie("chawk.api_key", value:@user.api_key, path:"/"	)
+					@layout = :layout
+				else
+					return false
+				end
+			end
+
 
 
 			def protected_by_api!
