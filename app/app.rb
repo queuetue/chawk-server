@@ -187,7 +187,7 @@ module Chawk
 
 		post "/points/:id/data" do
 			protected_by_api!
-			addr = Chawk.addr(@user.agent,params[:id].to_s)
+			addr = Chawk.addr(@api_user.agent,params[:id].to_s)
 			payload = JSON.parse params[:payload]
 
 			payload["items"].each do |item|
