@@ -146,11 +146,60 @@ module Chawk
 			redirect '/user'
 		end
 
+		post "/node_access_request" do
+			node=Chawk::Models::Node.first(id=params[:node_id])
+			user=Chawk::Models::GUser.first(id=params[:user_id])
+			Chawk::Models::NodeAccessRequest.create(node:node,user:user)
+		end
+
+		post "/addr/:id/relation" do
+			if has_addr?(@user.agent, params[:id].to_s)
+				user=Chawk::Models::GUser.first(id=params[:user_id])
+				@addr.set_permissions(user.agent,read=params[:read],write=params[:write],admin=params[:admin])
+			else
+				erb :not_allowed, layout:@layout
+			end				
+		end
+
 		get '/auth/g_callback' do
 			new_token = client.auth_code.get_token(params[:code], :redirect_uri => g_redirect_uri)
 			session[:access_token]  = new_token.token
 			session[:refresh_token] = new_token.refresh_token
 			redirect '/'
+		end
+
+		get "/points/:id/?" do
+			if has_addr?(@user.agent, params[:id].to_s)
+				@last = @addr.points.last
+				step = 0
+				@data = @addr.points.last(1000).collect{|d|{'x'=>step+=1,'a'=>d.value}}
+				erb :points_index, layout:@layout
+			else
+				erb :not_allowed, layout:@layout
+			end
+		end
+
+		post "/points/:id/?" do
+			if has_addr?(@user.agent, params[:id].to_s)
+				data = params[:new_data].split(",").collect{|d|d.to_i}
+				@addr.points << data
+
+				notification = ({
+				'event' => 'DATACHANGE',
+				'key' => params[:id],
+				'timestamp' => Time.now()
+				}).to_json
+
+				#raise "NOTIFY #{notification}"
+
+				notifications << notification
+				notifications.shift if notifications.length > 10
+				connections.each { |out| out << "data: #{notification}\n\n"}
+
+				redirect "/points/" + params[:id]
+			else
+				erb :not_allowed, layout:@layout
+			end
 		end
 
 		get "/points/:id/data" do
@@ -163,39 +212,6 @@ module Chawk
 
 			out['data'] = data.collect{|d|{'x'=>step+=1,'a'=>d.value}}
 			out.to_json
-		end
-
-		get "/points/:id/?" do
-			step = 0
-			begin
-				@addr = Chawk.addr(@user.agent,params[:id].to_s)
-				@last = @addr.points.last
-				@data = @addr.points.last(1000).collect{|d|{'x'=>step+=1,'a'=>d.value}}
-				erb :points_index, layout:@layout
-			rescue SecurityError
-				erb :not_allowed, layout:@layout
-			end
-
-		end
-
-		post "/points/:id/?" do
-			@addr = Chawk.addr(@user.agent,params[:id].to_s)
-			data = params[:new_data].split(",").collect{|d|d.to_i}
-			@addr.points << data
-
-			notification = ({
-			'event' => 'DATACHANGE',
-			'key' => params[:id],
-			'timestamp' => Time.now()
-			}).to_json
-
-			#raise "NOTIFY #{notification}"
-
-			notifications << notification
-			notifications.shift if notifications.length > 10
-			connections.each { |out| out << "data: #{notification}\n\n"}
-
-			redirect "/points/" + params[:id]
 		end
 
 		post "/points/:id/data" do
@@ -224,6 +240,16 @@ module Chawk
 
 
 		helpers do
+			def has_addr?(agent,address)
+				begin
+					@addr = Chawk.addr(@user.agent,params[:id].to_s)
+					return true
+				rescue SecurityError
+					return false
+				end
+			end
+
+
 			def protected_by_api!
 				return if authorized_by_api?
 				#headers['WWW-Authenticate'] = 'Basic realm="Restricted Area"'
