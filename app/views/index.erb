@@ -1,0 +1,15 @@
+
+<div class="row">
+  <div class="col-lg-12">
+  <h3>Eventually, this will be filled with interesting statistics about the server.</h3> 
+  </div>
+</div><!-- /.row -->
+<!-- /.row (index.erb)-->
+
+<script>
+var es = new EventSource('/connect');
+es.onmessage = function(e) {
+var msg = $.parseJSON(event.data);
+	console.log(msg);
+}
+</script>
