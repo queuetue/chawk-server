@@ -67,7 +67,11 @@ module Chawk
 				access_token = OAuth2::AccessToken.from_hash(client, {:access_token => session[:g_access_token]})
 
 				session[:g_access_token]  = access_token.token
-				info = access_token.get("https://www.googleapis.com/oauth2/v3/userinfo").parsed
+				begin
+					info = access_token.get("https://www.googleapis.com/oauth2/v3/userinfo").parsed
+				rescue OAuth2::Error
+					redirect '/signin'
+				end
 
 				@user = Chawk::Models::GUser.first(:google_id=>info["sub"]) 
 				if @user
