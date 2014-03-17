@@ -19,12 +19,8 @@ module Chawk
 		enable :sessions
 		enable :logging
 
-	    use Rack::MethodOverride ##<-- Required for put delete
+	    use Rack::MethodOverride
 
-
-		set :server, 'thin'
-		set :views_folder,  "#{settings.root}/../lib/views"
-		set :public_folder, "#{settings.root}/../public"
 		set :session_secret, SESSION_SECRET 
 	
 		connections = []
