@@ -167,10 +167,15 @@ module Chawk
 
 		get "/points/:id/?" do
 			step = 0
-			@addr = Chawk.addr(@user.agent,params[:id].to_s)
-			@last = @addr.points.last
-			@data = @addr.points.last(1000).collect{|d|{'x'=>step+=1,'a'=>d.value}}
-			erb :points_index, layout:@layout
+			begin
+				@addr = Chawk.addr(@user.agent,params[:id].to_s)
+				@last = @addr.points.last
+				@data = @addr.points.last(1000).collect{|d|{'x'=>step+=1,'a'=>d.value}}
+				erb :points_index, layout:@layout
+			rescue SecurityError
+				erb :not_allowed, layout:@layout
+			end
+
 		end
 
 		post "/points/:id/?" do
