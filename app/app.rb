@@ -161,8 +161,6 @@ module Chawk
 				'timestamp' => Time.now()
 				}).to_json
 
-				#raise "NOTIFY #{notification}"
-
 				notifications << notification
 				notifications.shift if notifications.length > 10
 				connections.each { |out| out << "data: #{notification}\n\n"}
@@ -188,14 +186,23 @@ module Chawk
 		post "/points/:id/data" do
 			protected_by_api!
 			addr = Chawk.addr(@api_user.agent,params[:id].to_s)
+			#raise "#{params}"
 			payload = JSON.parse params[:payload]
 
 			payload["items"].each do |item|
 				addr.points << item["v"].to_i
 			end
 
-			datachange_notify(params[:id])
+			notification = ({
+			'event' => 'DATACHANGE',
+			'key' => params[:id],
+			'timestamp' => Time.now()
+			}).to_json
 
+			notifications << notification
+			notifications.shift if notifications.length > 10
+			connections.each { |out| out << "data: #{notification}\n\n"}
+			"OK"
 		end
 
 		def g_redirect_uri
