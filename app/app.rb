@@ -3,6 +3,8 @@ require 'oauth2'
 require 'json'
 require 'chawk'
 require './lib/chawk_additional_models'
+require './app/point_routes'
+require './app/user_routes'
 
 SITE_TITLE = "Chawk Server"
 SESSION_SECRET= ENV['SESSION_SECRET']
@@ -13,18 +15,22 @@ G_API_SCOPES = [
 			'https://www.googleapis.com/auth/userinfo.profile'].join(' ')
 
 module Chawk
-
 	class ChawkServer < Sinatra::Base
 		enable :sessions
 		enable :logging
 		file = File.new("out.log", 'a+')
 		file.sync = true
-		use Rack::CommonLogger, file
 
 		connections   = []
 		notifications = []
 
+
+		use Rack::CommonLogger, file
 	    use Rack::MethodOverride
+
+	    register Sinatra::PointRoutes
+	    register Sinatra::UserRoutes
+	    register Sinatra::AddrRoutes
 
 	    # for testing, we'll pull this out later
 	    set :protection, :except => [:http_origin]
@@ -45,29 +51,12 @@ module Chawk
 			@site_title = SITE_TITLE
 		end
 
-		def title
-			@title
-		end
-
-		def site_title
-			@site_title
-		end
-
-		def timestamp
-			Time.now.strftime("%H:%M:%S")
-		end
-
 		before do
 			pass if request.path_info == '/auth/g_callback'
 			pass if request.path_info == '/signout'
 			pass if request.path_info == '/signin'
 			pass if request.path_info == "/points/:id/data"
 
-		end
-
-		get '/signin' do
-			@g_sign_in_url = client.auth_code.authorize_url(:redirect_uri => g_redirect_uri,:scope => G_API_SCOPES)
-			erb :sign_in, layout:false
 		end
 
 		get '/' do
@@ -84,34 +73,16 @@ module Chawk
 			end
 		end
 
+		get '/signin' do
+			@g_sign_in_url = client.auth_code.authorize_url(:redirect_uri => g_redirect_uri,:scope => G_API_SCOPES)
+			erb :sign_in, layout:false
+		end
+
 		get '/signout' do
 			session[:g_access_token] = nil
 			session[:user_id] = nil
 			@messages << "You have logged out."
 			redirect '/'
-		end
-
-		get '/user' do
-			protected!
-			@title = "Profile"
-			erb :user_edit, layout:@layout
-		end
-
-		put '/user' do
-			protected!
-			@user.email = (params[:email])
-			@user.handle = (params[:handle])
-			@user.save
-			@user.alerts.create(message:"Your information has been saved.",message_level:5,seen:false)
-			redirect '/user'
-		end
-
-		post "/api_key" do
-			protected!
-			@user.api_key = SecureRandom.uuid
-			@user.save
-			@user.alerts.create(message:"Your api key has been changed.",message_level:5,seen:false)
-			redirect '/user'
 		end
 
 		post "/node_access_request" do
@@ -121,98 +92,10 @@ module Chawk
 			Chawk::Models::NodeAccessRequest.create(node:node,user:user)
 		end
 
-		post "/addr/:id/relation" do
-			protected!
-			if has_addr?(@user.agent, params[:id].to_s)
-				user=Chawk::Models::GUser.first(id=params[:user_id])
-				@addr.set_permissions(user.agent,read=params[:read],write=params[:write],admin=params[:admin])
-			else
-				erb :not_allowed, layout:@layout
-			end				
-		end
-
-		post "/addr/:id/public_read" do
-			protected!
-			if has_addr?(@user.agent, params[:id].to_s)
-				@addr.public_read = params[:value] == "true"
-				''
-			else
-				erb :not_allowed, layout:@layout
-			end				
-		end
-
 		get '/auth/g_callback' do
 			new_token = client.auth_code.get_token(params[:code], :redirect_uri => g_redirect_uri)
 			session[:g_access_token]  = new_token.token
 			redirect '/'
-		end
-
-		get "/points/:id/?" do
-			protected!
-			if has_addr?(@user.agent, params[:id].to_s)
-				@last = @addr.points.last
-				step = 0
-				@data = @addr.points.last(1000).collect{|d|{'x'=>step+=1,'a'=>d.value}}
-				erb :points_index, layout:@layout
-			else
-				erb :not_allowed, layout:@layout
-			end
-		end
-
-		post "/points/:id/?" do
-			protected!
-			if has_addr?(@user.agent, params[:id].to_s)
-				data = params[:new_data].split(",").collect{|d|d.to_i}
-				@addr.points << data
-
-				notification = ({
-				'event' => 'DATACHANGE',
-				'key' => params[:id],
-				'timestamp' => Time.now()
-				}).to_json
-
-				notifications << notification
-				notifications.shift if notifications.length > 10
-				connections.each { |out| out << "data: #{notification}\n\n"}
-
-				redirect "/points/" + params[:id]
-			else
-				erb :not_allowed, layout:@layout
-			end
-		end
-
-		get "/points/:id/data" do
-			protected_by_api!
-			addr = Chawk.addr(@api_user.agent,params[:id].to_s)
-			data = addr.points.last(1000)
-			out = {}
-
-			step = 0
-
-			out['data'] = data.collect{|d|{'x'=>step+=1,'a'=>d.value}}
-			out.to_json
-		end
-
-		post "/points/:id/data" do
-			protected_by_api!
-			addr = Chawk.addr(@api_user.agent,params[:id].to_s)
-			#raise "#{params}"
-			payload = JSON.parse params[:payload]
-
-			payload["items"].each do |item|
-				addr.points << item["v"].to_i
-			end
-
-			notification = ({
-			'event' => 'DATACHANGE',
-			'key' => params[:id],
-			'timestamp' => Time.now()
-			}).to_json
-
-			notifications << notification
-			notifications.shift if notifications.length > 10
-			connections.each { |out| out << "data: #{notification}\n\n"}
-			"OK"
 		end
 
 		def g_redirect_uri
@@ -228,6 +111,19 @@ module Chawk
 
 
 		helpers do
+
+			def title
+				@title
+			end
+
+			def site_title
+				@site_title
+			end
+
+			def timestamp
+				Time.now.strftime("%H:%M:%S")
+			end
+
 			def has_addr?(agent,address)
 				begin
 					@addr = Chawk.addr(@user.agent,params[:id].to_s)
@@ -297,8 +193,6 @@ module Chawk
 				end
 				true
 			end
-
-  		end
-
+		end
 	end
 end

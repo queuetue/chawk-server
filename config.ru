@@ -35,10 +35,4 @@ map '/fonts' do
   run environment
 end
 
-#run Rack::URLMap.new({
-#  "/"    => Chawk::ChawkServer
-#})
-
-map "/" do
-	run Chawk::ChawkServer
-end
+run Chawk::ChawkServer

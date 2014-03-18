@@ -246,6 +246,9 @@ graph = Morris.Line({
     ymin: 'auto',
     ymax: 'auto',
     hideHover: true
+}).on('click', function(i, row){
+  console.log(i, row);
+  window.location.href = '/points/<%=@addr.address%>/point/' + row.id;
 });
 
 function readCookie(name) {
