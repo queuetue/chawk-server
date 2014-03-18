@@ -30,7 +30,11 @@ module Sinatra
 					protected!
 					if has_addr?(@user.agent, params[:id].to_s)
 						data = params[:new_data].split(",").collect{|d|d.to_i}
-						@addr.points << data
+						@addr.points.append(data,{:meta=>{
+							recordingAgent:"ChawkServer manual (v#{Chawk::SERVER_VERSION})",
+							source:request.host,
+							remote:request.ip
+							}})
 
 						notification = ({
 						'event' => 'DATACHANGE',
@@ -38,9 +42,9 @@ module Sinatra
 						'timestamp' => Time.now()
 						}).to_json
 
-						notifications << notification
-						notifications.shift if notifications.length > 10
-						connections.each { |out| out << "data: #{notification}\n\n"}
+						Chawk::ServerConnections.notifications << notification
+						Chawk::ServerConnections.notifications.shift if Chawk::ServerConnections.notifications.length > 10
+						Chawk::ServerConnections.connections.each { |out| out << "data: #{notification}\n\n"}
 
 						redirect "/points/" + params[:id]
 					else
@@ -67,7 +71,11 @@ module Sinatra
 					payload = JSON.parse params[:payload]
 
 					payload["items"].each do |item|
-						addr.points << item["v"].to_i
+						addr.points.append(item["v"].to_i, {:meta=>{
+							recordingAgent:"ChawkServer API (v#{Chawk::SERVER_VERSION})",
+							source:request.host,
+							remote:request.ip
+							}})
 					end
 
 					notification = ({
@@ -76,9 +84,9 @@ module Sinatra
 					'timestamp' => Time.now()
 					}).to_json
 
-					notifications << notification
-					notifications.shift if notifications.length > 10
-					connections.each { |out| out << "data: #{notification}\n\n"}
+					Chawk::ServerConnections.notifications << notification
+					Chawk::ServerConnections.notifications.shift if Chawk::ServerConnections.notifications.length > 10
+					Chawk::ServerConnections.connections.each { |out| out << "data: #{notification}\n\n"}
 					"OK"
 				end
 			end

@@ -15,15 +15,23 @@ G_API_SCOPES = [
 			'https://www.googleapis.com/auth/userinfo.profile'].join(' ')
 
 module Chawk
+	SERVER_VERSION="0.0.43"
+	module ServerConnections
+		@@connections   = []
+		@@notifications = []
+		def self.connections
+			return @@connections
+		end
+		def self.notifications
+			return @@notifications
+		end
+	end
+
 	class ChawkServer < Sinatra::Base
 		enable :sessions
 		enable :logging
 		file = File.new("out.log", 'a+')
 		file.sync = true
-
-		connections   = []
-		notifications = []
-
 
 		use Rack::CommonLogger, file
 	    use Rack::MethodOverride
@@ -66,9 +74,9 @@ module Chawk
 
 		get '/data_change', provides: 'text/event-stream' do
 			stream :keep_open do |out|
-				connections << out
+				Chawk::ServerConnections.connections << out
 				out.callback {
-					connections.delete(out)
+					Chawk::ServerConnections.connections.delete(out)
 				}
 			end
 		end
@@ -108,7 +116,6 @@ module Chawk
 		def access_token
 			OAuth2::AccessToken.new(client, session[:g_access_token])
 		end
-
 
 		helpers do
 

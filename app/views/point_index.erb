@@ -22,6 +22,7 @@
         <tr><td><strong>Value</strong></td><td><%=  @point.value %></td></tr>
         <tr><td><strong>Observed</strong></td><td><%=  Time.at(@point.observed_at).strftime("%b %-d, %Y %H:%M:%S.%L ") %></td></tr>
         <tr><td><strong>Recorded</strong></td><td><%=  @point.recorded_at.strftime("%b %-d, %Y ") %></td></tr>
+        <tr><td><strong>Metadata</strong></td><td><%=  @point.meta %></td></tr>
         <tr>
       </tbody>
     </table>

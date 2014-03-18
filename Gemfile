@@ -4,7 +4,7 @@ gem 'rake',"10.1.1"
 
 gem 'dm-postgres-adapter'
 gem 'sinatra',"1.4.4"
-gem 'chawk', "0.1.13"
+gem 'chawk', "0.1.15"
 gem 'json', "1.8.1"
 gem 'oauth2'
 gem 'thin'
