@@ -1,12 +1,9 @@
 require 'rspec/core/rake_task'
 
-task :default => :help
+task :default => :test
 
 desc "Run specs"
-task :spec do
-  RSpec::Core::RakeTask.new(:spec) do |t|
-    t.pattern = './spec/**/*_spec.rb'
-  end
+task :test do
 end
 
 desc "Run IRB console with app environment"

@@ -60,7 +60,7 @@ module Sinatra
 
 					step = 0
 
-					out['data'] = data.collect{|d|{'x'=>step+=1,'a'=>d.value}}
+					out['data'] = data.collect{|d|{'x'=>step+=1,'a'=>d.value, 'id' =>d.id}}
 					out.to_json
 				end
 
