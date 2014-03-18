@@ -1,6 +1,65 @@
 
-      <div class="jumbotron">
-        <h1>You're not signed in!</h1>
-        <p class="lead">You must log in to use this Chawk Server.</p>
-        <p><a class="btn btn-lg btn-success" href="<%= @g_sign_in_url%>" role="button">Sign in with Google</a></p>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="../../assets/ico/favicon.ico">
+
+    <title>Sign Into Chawk Server</title>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="/css/jumbotron-narrow.css" rel="stylesheet">
+  </head>
+
+  <body>
+
+    <div class="container">
+      <div class="header">
+        <ul class="nav nav-pills pull-right">
+          <li class="active"><a href="/">Home</a></li>
+          <li><a href="/about.html">About</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+        <h3 class="text-muted">Queuetue's Chawk Server</h3>
       </div>
+
+
+      <div class="jumbotron">
+      	<img src="/img/Jackdaw.svg"></img>
+      	<hr style=" border-color: #EEEEEE -moz-use-text-color #FFFFFF;border-style: solid none;border-width: 1px 0;margin: 18px 0;"/>
+        <p class="lead">This is a Chawk server.  Chawk is an engine that lets you store little pieces of data and sort, display and aggregate them together to make more sense out of them. </p>
+        <p><a class="btn btn-lg btn-success" href="<%= @g_sign_in_url%>" role="button">Sign in wth Google</a></p>
+        <p style="text-align: justify; font-size:1em"><small>This is a <strong style="color:#990000">TEST SERVER</strong>.  Any data placed on this server may be deleted at any time.  Your data will not be shared with anyone for any nefarious or marketing purposes - but this is early alpha software, so keep anything private to yourself!</small></p>
+      </div>
+
+      <div class="row marketing">
+        <div class="col-lg-6">
+          <h4>Track your Greenhouse.</h4>
+          <p>Your green thumb can get that much greener if you know what's going on - and you can look back on it to help yourself improve, or use it to share with others anywhere in the world.</p>
+
+
+          <h4>Compare Sales and Revenue.</h4>
+          <p>Tie together data in ways that use dot require a half-dozen spreadsheets, ad discovernew insights about how your business runs.</p>
+        </div>
+
+        <div class="col-lg-6">
+          <h4>Know your Impact.</h4>
+          <p>Everyone wants to save on fuel costs and reduce impact on the environment.  Chawk can let you store data directly from your car - and compare it to weather conditions, traffic, fuel prices and any other data - years later.</p>
+
+          <h4>Give your Technology a Voice.</h4>
+          <p>More and more gadgets, excercise gear, toys and appliances are starting to have something to say - but who will listen?  Chawk lets you store that data and collate it later when you want big answers.</p>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>Learn more about Chawk at <a href="http://github.com/queuetue/chawk-server">Github</a></p>
+      </div>
+
+    </div> <!-- /container -->
+  </body>
+</html>

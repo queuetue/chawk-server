@@ -18,3 +18,4 @@ tmp
 *.sqlite3
 config/database.rb
 *.log
+.DS_Store

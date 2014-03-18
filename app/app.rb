@@ -67,7 +67,7 @@ module Chawk
 
 		get '/signin' do
 			@g_sign_in_url = client.auth_code.authorize_url(:redirect_uri => g_redirect_uri,:scope => G_API_SCOPES)
-			erb :sign_in, :layout=>:not_logged_in_layout
+			erb :sign_in, layout:false
 		end
 
 		get '/' do
@@ -126,6 +126,16 @@ module Chawk
 			if has_addr?(@user.agent, params[:id].to_s)
 				user=Chawk::Models::GUser.first(id=params[:user_id])
 				@addr.set_permissions(user.agent,read=params[:read],write=params[:write],admin=params[:admin])
+			else
+				erb :not_allowed, layout:@layout
+			end				
+		end
+
+		post "/addr/:id/public_read" do
+			protected!
+			if has_addr?(@user.agent, params[:id].to_s)
+				@addr.public_read = params[:value] == "true"
+				''
 			else
 				erb :not_allowed, layout:@layout
 			end				

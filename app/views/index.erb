@@ -11,6 +11,7 @@
                     <th>User Count <i class="fa fa-sort"></i></th>
                     <th>Point Count <i class="fa fa-sort"></i></th>
                     <th>Value Count <i class="fa fa-sort"></i></th>
+                    <th>Public <i class="fa fa-sort"></i></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -20,6 +21,7 @@
   <td> <%= node.relations.length %></td>
   <td> <%= node.points.length %></td>
   <td> <%= node.values.length %></td>
+  <td> <%= node.public_read ? "YES" : "NO" %></td>
   </tr>
   <% end %>
 

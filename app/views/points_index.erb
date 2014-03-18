@@ -152,20 +152,43 @@
 
 
     <div class="col-lg-4">
-        <div class="panel panel-default">
+        <div class="panel panel-default" >
 
             <div class="panel-heading">
                 <i class="fa fa-bell fa-fw"></i> New Value in Series
             </div>
 
-           <form id="new_data_form" role="form" method="POST" action="/points/<%= @addr.address %>">
+           <form style="margin:15px" id="new_data_form" role="form" method="POST" action="/points/<%= @addr.address %>">
               <div class="form-group">
                 <input class="form-control" name="new_data" placeholder="Enter numbers here, separated by commas.">
               </div>
               <button type="submit" class="btn btn-default" >New Value</button>
             </form>
 
+
+            <div class="panel-heading">
+                <i class="fa fa-bell fa-fw"></i> Series Settings
+            </div>
+
+           <form style="margin:15px" id="public_access" role="form" method="POST" action="/points/<%= @addr.address %>">
+
+            <div class="form-group">
+                <label>Public Access</label>
+                <label class="checkbox-inline">
+                  <input id = "public_read" type="checkbox" <%= "checked" if @addr.node.public_read %> >
+                </label>
+              </div>
+
+           </form>
+
             <script>
+
+            $( "#public_read" ).change(function( event ) {
+                //alert(this.checked);
+                var url = "/addr/<%= @addr.address %>/public_read";
+                var posting = $.post( url, { value: this.checked } );
+            });
+
 
             $( "#new_data_form" ).submit(function( event ) {
                 event.preventDefault();
@@ -180,29 +203,6 @@
     </div>
 
 
-
-    <div class="col-lg-4">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <i class="fa fa-bell fa-fw"></i> Notifications Panel
-            </div>
-            <!-- /.panel-heading -->
-            <div class="panel-body">
-                <div class="list-group">
-                    <a href="#" class="list-group-item">
-                        <i class="fa fa-heart fa-fw"></i> New Data
-                        <span class="pull-right text-muted small"><em>10/7/2014 10:35:22</em>
-                        </span>
-                    </a>
-                </div>
-            </div>
-            <!-- /.panel-body -->
-        </div>
-    </div>
-
-
-
-
 <!-- Page-Level Plugin Scripts - Dashboard -->
 <script src="/js/plugins/morris/raphael-2.1.0.min.js"></script>
 <script src="/js/plugins/morris/morris.js"></script>
@@ -211,6 +211,22 @@
 <script src="/js/sb-admin.js"></script>
 
 <script>
+
+var data = <%= @data.to_json %>
+
+var graph;
+
+graph = Morris.Line({
+    element: 'morris-area-chart',
+    data: data,
+    xkey: 'x',
+    ykeys: ['a'],
+    labels: ['a'],
+    parseTime: false,
+    ymin: 'auto',
+    ymax: 'auto',
+    hideHover: true
+});
 
 function readCookie(name) {
     var nameEQ = escape(name) + "=";
@@ -223,9 +239,6 @@ function readCookie(name) {
     return null;
 }
 
-var data = <%= @data.to_json %>
-
-var graph;
 var es = new EventSource('/data_change');
 
 es.onmessage = function(e) {
@@ -239,17 +252,5 @@ var refreshData = function() {
         graph.setData(data.data);
     });
 }
-
-graph = Morris.Line({
-    element: 'morris-area-chart',
-    data: data,
-    xkey: 'x',
-    ykeys: ['a'],
-    labels: ['a'],
-    parseTime: false,
-    ymin: 'auto',
-    ymax: 'auto',
-    hideHover: true
-});
 
 </script>
