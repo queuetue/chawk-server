@@ -167,7 +167,7 @@
 
 
             <div class="panel-heading">
-                <i class="fa fa-bell fa-fw"></i> Series Settings
+                <i class="fa fa-bell fa-fw"></i> Series Controls
             </div>
 
            <form style="margin:15px" id="public_access" role="form" method="POST" action="/points/<%= @addr.address %>">
@@ -181,7 +181,27 @@
 
            </form>
 
+             <div style="padding-left:20px;padding-bottom:10px">
+              <button id="clear_button" type="submit" class="btn btn-danger" ><i class="fa fa-warning fa-fw"></i>Clear Series</button>
+              <button id="delete_button" type="submit" class="btn btn-danger" ><i class="fa fa-trash-o fa-fw"></i>Delete Series</button>
+             </div>
             <script>
+
+            $( "#clear_button" ).click(function( event ) {
+              if (window.confirm("Are you sure?")) {
+                var url = "/addr/<%= @addr.address %>/clear";
+              }
+                //var url = "/addr/<%= @addr.address %>/public_read";
+                //var posting = $.post( url, { value: this.checked } );
+            });
+
+            $( "#delete_button" ).click(function( event ) {
+              if (window.confirm("Are you sure?")) {
+                var url = "/addr/<%= @addr.address %>/delete";
+              }
+                //var url = "/addr/<%= @addr.address %>/public_read";
+                //var posting = $.post( url, { value: this.checked } );
+            });
 
             $( "#public_read" ).change(function( event ) {
                 //alert(this.checked);
