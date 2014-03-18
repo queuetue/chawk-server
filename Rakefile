@@ -1,20 +1,9 @@
-require 'rspec/core/rake_task'
+require 'rake/testtask'
 
-task :default => :test
-
-desc "Run specs"
-task :test do
+Rake::TestTask.new(:test) do |test|
+  test.libs << 'lib' << 'test'
+  test.pattern = 'test/**/*_test.rb'
 end
 
-desc "Run IRB console with app environment"
-task :console do
-  puts "Loading development console..."
-  system("irb -r ./config/boot.rb")
-end
+task :default => [:test]
 
-desc "Show help menu"
-task :help do
-  puts "Available rake tasks: "
-  puts "rake console - Run a IRB console with all enviroment loaded"
-  puts "rake spec - Run specs and calculate coverage"
-end

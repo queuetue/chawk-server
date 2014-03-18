@@ -5,6 +5,7 @@ require 'chawk'
 require './lib/chawk_additional_models'
 require './app/point_routes'
 require './app/user_routes'
+require './app/addr_routes'
 
 SITE_TITLE = "Chawk Server"
 SESSION_SECRET= ENV['SESSION_SECRET']
