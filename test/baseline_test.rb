@@ -43,16 +43,13 @@ class MyTest < MiniTest::Unit::TestCase
 		def test_hello_world
 			get '/'
 			last_response.status.must_equal 200
-			doc = Nokogiri::HTML(last_response.body)
-			node = doc.css('title')[0]
-			node.content.strip.must_equal "Chawk Server"
+			last_response.body.include?("Chawk Server").must_equal true
 		end
 
 		def test_get_points
 			Chawk.addr(@user.agent,"foo").points << [1,2,3,4,5,6]
 			get "/points/foo/"
-			doc = Nokogiri::HTML(last_response.body)
-			puts "ZZZ - #{last_response.inspect} \n\n"
+			last_response.body.include?('var data = [{"x":1,"a":1,"id":1},{"x":2,"a":2,"id":2},{"x":3,"a":3,"id":3},{"x":4,"a":4,"id":4},{"x":5,"a":5,"id":5},{"x":6,"a":6,"id":6}]').must_equal true
 		end
 	end
 

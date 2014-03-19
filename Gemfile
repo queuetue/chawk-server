@@ -21,7 +21,6 @@ end
 
 group :test do
     gem 'dm-sqlite-adapter'
-    gem 'nokogiri'
     gem 'rspec',"2.14.1"
     gem 'rack-test', :require => "rack/test"
     gem 'launchy',"2.4.2"
