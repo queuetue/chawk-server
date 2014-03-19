@@ -8,9 +8,9 @@ module Sinatra
 					protected!
 					if has_addr?(@user.agent, params[:id].to_s)
 						@point = @addr.node.points.get(params[:point_id])
-						erb :point_index, layout:@layout
+						erb :point_index, :layout =>:layout
 					else
-						erb :not_allowed, layout:@layout
+						erb :not_allowed, :layout =>:layout
 					end
 				end
 
@@ -20,9 +20,9 @@ module Sinatra
 						@last = @addr.points.last
 						step = 0
 						@data = @addr.points.last(1000).collect{|d|{'x'=>step+=1,'a'=>d.value, 'id' =>d.id}}
-						erb :points_index, layout:@layout
+						erb :points_index, :layout=>:layout
 					else
-						erb :not_allowed, layout:@layout
+						erb :not_allowed, :layout=>:layout
 					end
 				end
 
@@ -48,7 +48,7 @@ module Sinatra
 
 						redirect "/points/" + params[:id]
 					else
-						erb :not_allowed, layout:@layout
+						erb :not_allowed, :layout=>:layout
 					end
 				end
 

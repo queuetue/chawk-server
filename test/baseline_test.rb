@@ -1,6 +1,31 @@
 # test.rb
 require File.expand_path '../test_helper.rb', __FILE__
 
+def getchuck
+	# Go, chuck!  You can do it!
+	user = Chawk::Models::GUser.first(name:"Chuck Awesome")
+	unless user 
+		user = Chawk::Models::GUser.create(
+				name:"Chuck Awesome", 
+				email:"baconator@chuck.it", 
+				agent:Chawk::Models::Agent.create(name:"chuck"),
+				api_key:SecureRandom.uuid
+				)
+	end 
+	user			
+end
+
+class Chawk::ChawkServer
+	def user
+		@user
+	end
+
+	def authorized?
+		@user = getchuck
+		true
+	end
+end
+
 class MyTest < MiniTest::Unit::TestCase
 
   	include Rack::Test::Methods
@@ -12,15 +37,7 @@ class MyTest < MiniTest::Unit::TestCase
 		end
 
 		before do
-			@user = Chawk::Models::GUser.first(name:"Chuck Awesome")
-			unless @user 
-				@user = Chawk::Models::GUser.create(
-						name:"Chuck Awesome", 
-						email:"baconator@chuck.it", 
-						agent:Chawk::Models::Agent.create(name:"chuck"),
-						api_key:SecureRandom.uuid
-						)
-			end 			
+			@user = getchuck
 		end
 
 		def test_hello_world
@@ -35,7 +52,7 @@ class MyTest < MiniTest::Unit::TestCase
 			Chawk.addr(@user.agent,"foo").points << [1,2,3,4,5,6]
 			get "/points/foo/"
 			doc = Nokogiri::HTML(last_response.body)
-			#puts "ZZZ - #{last_response.inspect} \n\n"
+			puts "ZZZ - #{last_response.inspect} \n\n"
 		end
 	end
 
