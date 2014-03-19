@@ -118,6 +118,87 @@ module Chawk
 			OAuth2::AccessToken.new(client, session[:g_access_token])
 		end
 
+		def timestamp
+			Time.now.strftime("%H:%M:%S")
+		end
+
+		def has_addr?(agent,address)
+			begin
+				@addr = Chawk.addr(@user.agent,params[:id].to_s)
+				return true
+			rescue SecurityError
+				return false
+			end
+		end
+
+		def user=(new_user)
+			@user = new_user
+		end
+		
+		def user
+			@user
+		end
+
+		def protected!
+			redirect '/signin' unless authorized?
+		end
+
+		def authorized?
+			if session[:g_access_token] && !session[:g_access_token].nil?
+				# TODO: Deal with failures, outages, overall fragility here
+
+				access_token = OAuth2::AccessToken.from_hash(client, {:access_token => session[:g_access_token]})
+
+				session[:g_access_token]  = access_token.token
+				begin
+					info = access_token.get("https://www.googleapis.com/oauth2/v3/userinfo").parsed
+				rescue OAuth2::Error
+					return false
+				end
+
+				@user = Chawk::Models::GUser.first(:google_id=>info["sub"]) 
+				if @user
+					@user.google_email = info["email"]
+					@user.name = info["name"]
+					@user.family_name = info["family_name"]
+					@user.image = info["picture"]
+					@user.save
+				else
+					@user = Chawk::Models::GUser.create(google_id:info["sub"], 
+							agent:Chawk::Models::Agent.create(name:info["sub"]),
+							google_email:info["email"],							
+							email:info["email"],
+							handle:info["email"],
+							name:info["name"],
+							family_name:info["family_name"],
+							image:info["picture"],
+							api_key:SecureRandom.uuid )
+				end
+				response.set_cookie("chawk.api_key", value:@user.api_key, path:"/"	)
+				@layout = :layout
+			else
+				return false
+			end
+		end
+
+
+
+		def protected_by_api!
+			return if authorized_by_api?
+			#headers['WWW-Authenticate'] = 'Basic realm="Restricted Area"'
+			halt 403, "Not authorized\n"
+		end
+
+		def authorized_by_api?
+			unless params[:api_key]
+				return false
+			end
+			@api_user = Chawk::Models::GUser.first(api_key:params[:api_key])
+			unless @api_user
+				return false
+			end
+			true
+		end
 		helpers do
 
 			def title
@@ -128,79 +209,6 @@ module Chawk
 				@site_title
 			end
 
-			def timestamp
-				Time.now.strftime("%H:%M:%S")
-			end
-
-			def has_addr?(agent,address)
-				begin
-					@addr = Chawk.addr(@user.agent,params[:id].to_s)
-					return true
-				rescue SecurityError
-					return false
-				end
-			end
-
-			def protected!
-				redirect '/signin' unless authorized?
-			end
-
-			def authorized?
-				if session[:g_access_token] && !session[:g_access_token].nil?
-					# TODO: Deal with failures, outages, overall fragility here
-
-					access_token = OAuth2::AccessToken.from_hash(client, {:access_token => session[:g_access_token]})
-
-					session[:g_access_token]  = access_token.token
-					begin
-						info = access_token.get("https://www.googleapis.com/oauth2/v3/userinfo").parsed
-					rescue OAuth2::Error
-						return false
-					end
-
-					@user = Chawk::Models::GUser.first(:google_id=>info["sub"]) 
-					if @user
-						@user.google_email = info["email"]
-						@user.name = info["name"]
-						@user.family_name = info["family_name"]
-						@user.image = info["picture"]
-						@user.save
-					else
-						@user = Chawk::Models::GUser.create(google_id:info["sub"], 
-								agent:Chawk::Models::Agent.create(name:info["sub"]),
-								google_email:info["email"],							
-								email:info["email"],
-								handle:info["email"],
-								name:info["name"],
-								family_name:info["family_name"],
-								image:info["picture"],
-								api_key:SecureRandom.uuid )
-					end
-					response.set_cookie("chawk.api_key", value:@user.api_key, path:"/"	)
-					@layout = :layout
-				else
-					return false
-				end
-			end
-
-
-
-			def protected_by_api!
-				return if authorized_by_api?
-				#headers['WWW-Authenticate'] = 'Basic realm="Restricted Area"'
-				halt 403, "Not authorized\n"
-			end
-
-			def authorized_by_api?
-				unless params[:api_key]
-					return false
-				end
-				@api_user = Chawk::Models::GUser.first(api_key:params[:api_key])
-				unless @api_user
-					return false
-				end
-				true
-			end
 		end
 	end
 end
