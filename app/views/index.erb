@@ -17,7 +17,7 @@
                 <tbody>
 
   <% Chawk::Models::Node.all.each do |node| %>  <tr>
-  <td><a href="/points/<%=node.address%>/"><%=node.address%></a></td>
+  <td><a href="/points/<%=node.address%>/"><%=node.address%> (<%=node.id%>)</a></td>
   <td> <%= node.relations.length %></td>
   <td> <%= node.points.length %></td>
   <td> <%= node.values.length %></td>

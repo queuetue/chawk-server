@@ -64,6 +64,44 @@ module Sinatra
 					out.to_json
 				end
 
+				app.get "/points/:id/data/stats/?" do
+					protected_by_api!
+					addr = Chawk.addr(@api_user.agent,params[:id].to_s)
+					out = { stats:{
+							len:addr.points.length,
+							min:addr.points.min,
+							max:addr.points.max,
+							usercount:addr.node.relations.count,
+							last_ts: addr.points.last ? Time.at(addr.points.last.observed_at).strftime("%b/%d/%y %H:00") : "Never"
+						}
+					}
+					out.to_json
+				end
+
+				app.delete "/points/:id/data" do
+					# TODO: Check for admin privs, consider paranoia mode, think about export / backup
+					protected_by_api!
+					addr = Chawk.addr(@api_user.agent,params[:id].to_s)
+
+					addr.node.points.all.destroy!
+
+					# addr.node.points.all.each do |point|
+					# 	point.destroy
+					# end
+
+
+					notification = ({
+					'event' => 'DATACHANGE',
+					'key' => params[:id],
+					'timestamp' => Time.now()
+					}).to_json
+
+					Chawk::ServerConnections.notifications << notification
+					Chawk::ServerConnections.notifications.shift if Chawk::ServerConnections.notifications.length > 10
+					Chawk::ServerConnections.connections.each { |out| out << "data: #{notification}\n\n"}
+					"OK"
+				end
+
 				app.post "/points/:id/data" do
 					protected_by_api!
 					addr = Chawk.addr(@api_user.agent,params[:id].to_s)

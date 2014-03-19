@@ -1,7 +1,6 @@
 <div class="row">
     <div class="col-lg-12">
         <h1 class="page-header">Series '<%=  @addr.address %>'</h1>
-        API path: points/<%=  @addr.address %>/data
     </div>
     <!-- /.col-lg-12 -->
 </div>
@@ -16,7 +15,7 @@
             <i class="fa fa-comments fa-5x"></i>
           </div>
           <div class="col-xs-6 text-right">
-            <p class="announcement-heading"><%= @addr.points.length %></p>
+            <p class="announcement-heading" id="data_length"><%= @addr.points.length %></p>
             <p class="announcement-text">Data Points</p>
           </div>
         </div>
@@ -43,8 +42,8 @@
             <i class="fa fa-check fa-5x"></i>
           </div>
           <div class="col-xs-6 text-right">
-            <p class="announcement-heading"><%= @last ? Time.at(@last.observed_at).strftime("%b %d %Y %H:%M") : "Never" %></p>
-            <p class="announcement-text">Last Timestamp</p>
+            <p class="announcement-heading" id="data_timestamp"><%= @last ? Time.at(@last.observed_at).strftime("%b/%d/%y %H:00") : "Never" %></p>
+            <p class="announcement-text">Last Entry</p>
           </div>
         </div>
       </div>
@@ -70,7 +69,7 @@
             <i class="fa fa-tasks fa-5x"></i>
           </div>
           <div class="col-xs-6 text-right">
-            <p class="announcement-heading"><%= @addr.points.max %> / <%= @addr.points.min %></p>
+            <p class="announcement-heading" id="data_min_max"><%= @addr.points.min %> / <%= @addr.points.max %></p>
             <p class="announcement-text">Min / Max</p>
           </div>
         </div>
@@ -97,7 +96,7 @@
             <i class="fa fa-comments fa-5x"></i>
           </div>
           <div class="col-xs-6 text-right">
-            <p class="announcement-heading"><%= @addr.node.relations.count %></p>
+            <p class="announcement-heading" id="data_users"><%= @addr.node.relations.count %></p>
             <p class="announcement-text">Related Users</p>
           </div>
         </div>
@@ -152,20 +151,23 @@
 
 
     <div class="col-lg-4">
-        <div class="panel panel-default" >
+        <div class="panel panel-info  " >
 
             <div class="panel-heading">
-                <i class="fa fa-bell fa-fw"></i> New Value in Series
+                <i class="fa fa-bell fa-fw"></i> Add Data to Series
             </div>
 
            <form style="margin:15px" id="new_data_form" role="form" method="POST" action="/points/<%= @addr.address %>">
               <div class="form-group">
                 <input class="form-control" name="new_data" placeholder="Enter numbers here, separated by commas.">
               </div>
-              <button type="submit" class="btn btn-default" >New Value</button>
+              <button type="submit" class="btn btn-primary" >New Value</button>
             </form>
+          </div>
+        </div>
 
-
+    <div class="col-lg-4">
+      <div class="panel panel-warning " >
             <div class="panel-heading">
                 <i class="fa fa-bell fa-fw"></i> Series Controls
             </div>
@@ -180,27 +182,41 @@
               </div>
 
            </form>
+          </div>
+        </div>
 
-             <div style="padding-left:20px;padding-bottom:10px">
+    <div class="col-lg-4">
+      <div class="panel panel-danger" >
+
+            <div class="panel-heading">
+                <i class="fa fa-bell fa-fw"></i> Destructive Operations
+            </div>
+
+             <div style="padding-left:20px;padding-bottom:10px;padding-top:10px">
               <button id="clear_button" type="submit" class="btn btn-danger" ><i class="fa fa-warning fa-fw"></i>Clear Series</button>
               <button id="delete_button" type="submit" class="btn btn-danger" ><i class="fa fa-trash-o fa-fw"></i>Delete Series</button>
              </div>
             <script>
 
             $( "#clear_button" ).click(function( event ) {
-              if (window.confirm("Are you sure?")) {
-                var url = "/addr/<%= @addr.address %>/clear";
+              if (window.confirm("Are you sure you want to destroy all points in this series?")) {
+                $.ajax({
+                  url: '/points/<%= @addr.address %>/data?api_key=' + readCookie('chawk.api_key'),
+                  type: 'DELETE',
+                });
               }
-                //var url = "/addr/<%= @addr.address %>/public_read";
-                //var posting = $.post( url, { value: this.checked } );
             });
 
             $( "#delete_button" ).click(function( event ) {
-              if (window.confirm("Are you sure?")) {
-                var url = "/addr/<%= @addr.address %>/delete";
+              if (window.confirm("Are you sure you want to destroy all data and points in this series?")) {
+                if (window.confirm("You know you can't undo this operation?")) {
+                  $.ajax({
+                    url: '/addr/<%= @addr.address %>/data?api_key=' + readCookie('chawk.api_key'),
+                    type: 'DELETE',
+                  });
+                  window.location.href = '/'
+                }
               }
-                //var url = "/addr/<%= @addr.address %>/public_read";
-                //var posting = $.post( url, { value: this.checked } );
             });
 
             $( "#public_read" ).change(function( event ) {
@@ -273,6 +289,14 @@ es.onmessage = function(e) {
 var refreshData = function() {
     $.getJSON( '/points/<%= @addr.address %>/data?api_key=' + readCookie('chawk.api_key'), function(data) {
         graph.setData(data.data);
+    });
+    $.getJSON( '/points/<%= @addr.address %>/data/stats?api_key=' + readCookie('chawk.api_key'), function(data) {
+        $('#data_min_max').text(data.stats.min + ' / ' + data.stats.max);
+        $('#data_users').text(data.stats.usercount);
+        $('#data_timestamp').text(data.stats.last_ts);
+        $('#data_length').text(data.stats.len);
+
+        console.log(data.stats);
     });
 }
 
